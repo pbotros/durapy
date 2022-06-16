@@ -1,0 +1,9 @@
+#!/bin/bash
+
+ssh -p ${jump_port} -T ${jump_username}@${jump_hostname} 'ssh -T -o "StrictHostKeyChecking no" -i ${identity_key} ${username}@${hostname} "set -x && cd ~/Development/python || cd ~/python || exit 1 && git branch | grep \* | cut -d \  -f2 && git pull && [ \"$$(uname -o)\" = 'Msys' ] && exit 0 || sudo systemctl daemon-reload && sudo systemctl restart ${target_name}"'
+
+ret=$$?
+echo 'Return code $${ret}'
+exit $$ret
+
+

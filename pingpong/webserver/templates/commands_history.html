@@ -1,0 +1,14 @@
+{% include 'header.html' %}
+
+<main role="main" class="col-md-10 ml-sm-auto col-lg-11 p-4 mt-5">
+    <div>
+        <h2 class="mt-2">Commands History</h2>
+    </div>
+
+    <div id="commands-history-container"></div>
+</main>
+
+
+<script type="module" src="{{ static_url('js/commands_history.js') }}"></script>
+
+{% include 'footer.html' %}

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+ssh -p ${jump_port} -T ${jump_username}@${jump_hostname} "ssh -T -o 'StrictHostKeyChecking no' -i ${identity_key} ${username}@${hostname} 'set -x && [ \"$$(uname -o)\" = "Msys" ] && exit 1 || cd ~/Development/python || cd ~/python || exit 1 && sudo systemctl ${systemctl_cmd} ${target_name}'"
+
+ret=$$?
+echo 'Return code $${ret}'
+exit $$ret

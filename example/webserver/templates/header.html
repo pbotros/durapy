@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/dashboard.css') }}">
+    <script src="{{ static_url('js/third_party/jquery-3.4.1.min.js') }}"></script>
+    <script src="{{ static_url('js/third_party/moment.min.js') }}"></script>
+    <script src="{{ static_url('js/third_party/moment-timezone.min.js') }}"></script>
+    <script src="{{ static_url('js/third_party/bootstrap.bundle.min.js') }}"></script>
+</head>
+<body>
+<nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0">
+    <a class="navbar-brand col-md-1 mr-0" href="/">Example</a>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <nav class="col-md-1 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <ul class="nav flex-column">
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Commands</span>
+                        <a class="d-flex align-items-center text-muted" href="#">
+                        </a>
+                    </h6>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active == 'commands_history' %} active {% end %}" href="/commands/history">
+                            Commands History
+                        </a>
+                        <a class="nav-link {% if active == 'commands_send' %} active {% end %}" href="/commands/send">
+                            Send Commands
+                        </a>
+                    </li>
+                </ul>
+                <ul class="nav flex-column">
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Monitoring</span>
+                        <a class="d-flex align-items-center text-muted" href="#">
+                        </a>
+                    </h6>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active == 'logging' %} active {% end %}" href="/logging">
+                            Logging
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active == 'statuses' %} active {% end %}" href="/statuses">
+                            Statuses
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </div>

@@ -1,1 +1,1 @@
-# pybmi
+# DuraPy

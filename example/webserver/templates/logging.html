@@ -1,0 +1,14 @@
+{% include 'header.html' %}
+
+<main role="main" class="col-md-10 ml-sm-auto col-lg-11 p-4 mt-5">
+    <h2 class="mt-2">Logging</h2>
+    <div class="row">
+        <div class="col-md-12">
+            <textarea id="example-process-logging" rows="40" style="width: 100%; font-size: 8pt; font-family:monospace; resize: none;" readonly></textarea>
+        </div>
+    </div>
+</main>
+
+<script type="module" src="{{ static_url('js/logging.js') }}"></script>
+
+{% include 'footer.html' %}
