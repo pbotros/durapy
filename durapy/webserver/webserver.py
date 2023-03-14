@@ -4,6 +4,7 @@ import functools
 import logging
 import os
 import signal
+import pendulum
 from asyncio import subprocess
 from typing import List, Type, Optional, Callable, Any
 
@@ -60,7 +61,7 @@ class CommandTypesHandler(JsonHandler):
             field_descriptions = extract_flattened_field_descriptions_class(clazz, existing_instance=None)
             ret.append({
                 'type': clazz.type(),
-                'field_descriptions': [fd.to_dict() for fd in field_descriptions],
+                'field_descriptions': [fd.to_dict(encode_json=True) for fd in field_descriptions],
             })
         return self.write({
             'command_types': ret,
@@ -87,12 +88,12 @@ class CommandGetHandler(JsonHandler):
             self.send_error(404)
             return
 
-        d = persisted_command.to_dict()
+        d = persisted_command.to_dict(encode_json=True)
         d['type'] = persisted_command.command.type()
         field_descriptions = extract_flattened_field_descriptions_class(
             clazz=persisted_command.command.__class__,
             existing_instance=persisted_command.command)
-        d['field_descriptions'] = [fd.to_dict() for fd in field_descriptions]
+        d['field_descriptions'] = [fd.to_dict(encode_json=True) for fd in field_descriptions]
         return self.write({
             'command': d
         })
@@ -147,12 +148,12 @@ class CommandCrudHandler(JsonHandler):
         last_persisted_commands = self._command_db.fetch_last(num, offset=offset)
         response_commmands = []
         for persisted_command in last_persisted_commands:
-            d = persisted_command.to_dict()
+            d = persisted_command.to_dict(encode_json=True)
             d['type'] = persisted_command.command.type()
             field_descriptions = extract_flattened_field_descriptions_class(
                 clazz=persisted_command.command.__class__,
                 existing_instance=persisted_command.command)
-            d['field_descriptions'] = [fd.to_dict() for fd in field_descriptions]
+            d['field_descriptions'] = [fd.to_dict(encode_json=True) for fd in field_descriptions]
 
             response_commmands.append(d)
         return self.write({
@@ -183,7 +184,7 @@ class CommandCrudHandler(JsonHandler):
 
         sent = self._command_db.send_command(command_to_send)
         logging.info('Sent command: {}'.format(sent))
-        d = sent.to_dict()
+        d = sent.to_dict(encode_json=True)
         d['type'] = command_to_send.type()
         return self.write({
             'command': d
@@ -222,7 +223,7 @@ class TailWebSocketHandler(tornado.websocket.WebSocketHandler):
             self._process = None
 
         self._process = await subprocess.create_subprocess_shell(
-            f'tail -n 100 -F {self._fluentd_config.log_file_dir}/*log',
+            f'{self._fluentd_config.tail_bin} -n 100 -F {self._fluentd_config.log_file_dir}/*log',
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
 
@@ -318,9 +319,9 @@ class DeployGetHandler(JsonHandler):
 
         statuses = []
         for f in fetched:
-            f = f.to_dict()
-            f['last_started_at'] = f['last_started_at'].isoformat()
-            f['last_heartbeat_at'] = f['last_heartbeat_at'].isoformat()
+            f = f.to_dict(encode_json=True)
+            f['last_started_at'] = pendulum.from_timestamp(f['last_started_at'], 'UTC').isoformat()
+            f['last_heartbeat_at'] = pendulum.from_timestamp(f['last_heartbeat_at'], 'UTC').isoformat()
             f['target_configured'] = f['process_name'] in self._target_processes
             statuses.append(f)
         return self.write({
@@ -391,14 +392,25 @@ class DurapyWebserver:
     def __init__(
             self,
             webserver_dir: str,
-            configuration: Configuration):
+            configuration: Configuration,
+            registry: CommandRegistry = None,
+            webserver_port: int = 5001):
         """
         @param webserver_dir: the directory containing static/ and templates/ directory, which contain css/js/img files
         and the HTML template files, respectively. This directory will be searched in addition to durapy's static/
-        directory when finding static files.
+        directory when finding static files. A traditional value for this would be
+        `os.path.dirname(os.path.realpath(__file__))` from the calling file.
+        @param registry: a command registry to be registered for this webserver. Useful for making this webserver
+        also be able to respond to commands like any other DuraPy service.
+        @param webserver_port: port on which to listen for the Tornado HTTP webserver.
         """
         self._webserver_dir = webserver_dir
+        self._webserver_port = webserver_port
         self._command_prefix = configuration.command_prefix
+        if registry is not None:
+            self._registry = registry
+        else:
+            self._registry = CommandRegistry()
 
         self._command_db = configuration.command_db_factory.create(
             command_prefix=configuration.command_prefix,
@@ -457,15 +469,15 @@ class DurapyWebserver:
         Runs a tornado application, likely one produced by #new_application(). This will block forever until the
         process is Ctrl-C'd or killed.
         """
-        # Don't trap Ctrl+C in the BMI process runner, since it's running in the background and makes the whole process
-        # unkillable
+        # Don't trap Ctrl+C in the DuraPy process runner, since it's running in the background and makes the whole
+        # process unkillable
         runner = ProcessRunner(
             configuration=self._configuration,
             process_name='webserver',
-            command_registry=CommandRegistry(),
+            command_registry=self._registry,
             override_signal_handlers=False)
 
-        app.listen(5001)
+        app.listen(self._webserver_port)
         orig_sigint = signal.getsignal(signal.SIGINT)
         orig_sigterm = signal.getsignal(signal.SIGTERM)
 
@@ -475,7 +487,7 @@ class DurapyWebserver:
             if loop is not None:
                 loop.stop()
             if callable(orig):
-                orig()
+                orig(signum, frame)
 
         signal.signal(signal.SIGINT, functools.partial(handler, orig_sigint))
         signal.signal(signal.SIGTERM, functools.partial(handler, orig_sigterm))

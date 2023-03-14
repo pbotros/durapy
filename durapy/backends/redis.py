@@ -120,7 +120,7 @@ class _RedisCommandDatabase(CommandDatabase):
         return PersistedCommand(command=command, key=redis_key, timestamp_ms=redis_timestamp_ms)
 
     def _command_to_dict(self, command: BaseCommand) -> Dict[str, Any]:
-        command_dict = command.to_dict()
+        command_dict = command.to_dict(encode_json=True)
         command_class: Optional[Type[BaseCommand]] = \
             only([clazz for clazz in self._command_classes if clazz.type() == command.type()])
         if command_class is None:

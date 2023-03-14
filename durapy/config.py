@@ -61,3 +61,6 @@ class FluentDConfiguration:
     # configuration file used by fluentd. Again, needs to be accessible on the same machine running the webserver.
     # Preferably, give the absolute filename (e.g. /path/to/foo) rather than relative (e.g. ./foo).
     log_file_dir: str
+
+    # The "tail" executable to call for tailing fluentd output. Can specify full path if needed by overriding this.
+    tail_bin: str = 'tail'

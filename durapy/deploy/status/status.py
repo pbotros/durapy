@@ -3,9 +3,8 @@ import datetime
 import subprocess
 from typing import Optional, List
 
-import records
+import sqlalchemy
 from dataclasses_json import DataClassJsonMixin
-
 from durapy.command.model import LifecycleListener
 from durapy.deploy.status.config import LifecycleDatabaseConfiguration
 
@@ -24,7 +23,7 @@ class ProcessStatus(DataClassJsonMixin):
 
 
 class ProcessStatusDatabase(LifecycleListener):
-    db: Optional[records.Database]
+    db: sqlalchemy.Engine
 
     def __init__(
             self,
@@ -33,10 +32,11 @@ class ProcessStatusDatabase(LifecycleListener):
         """
         :param process: the process for which to mark heartbeats / restarts. Leave as None if just fetching.
         """
-        self.db = records.Database(f'mysql+pymysql://'
-                                   f'{config.db_username}:{config.db_password}'
-                                   f'@{config.db_hostname}:{config.db_port}/{config.db_name}',
-                                   pool_pre_ping=True)
+        self.db = sqlalchemy.create_engine(
+            f'mysql+pymysql://'
+            f'{config.db_username}:{config.db_password}'
+            f'@{config.db_hostname}:{config.db_port}/{config.db_name}',
+            pool_pre_ping=True)
         self._sha = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
         self._process_name = process_name
 
@@ -44,18 +44,19 @@ class ProcessStatusDatabase(LifecycleListener):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.db.close()
         self.db = None
 
     def fetch_all(self) -> List[ProcessStatus]:
-        rows = self.db.query('SELECT '
-                             '  *'
-                             ', CURRENT_TIMESTAMP() - last_heartbeat_at as last_heartbeat_ago '
-                             ', CURRENT_TIMESTAMP() - last_started_at as last_started_ago '
-                             'FROM process_statuses '
-                             'ORDER BY process_name ASC')
+        with self.db.begin() as conn:
+            rows = conn.execute(sqlalchemy.text(
+                'SELECT '
+                '  *'
+                ', CURRENT_TIMESTAMP() - last_heartbeat_at as last_heartbeat_ago '
+                ', CURRENT_TIMESTAMP() - last_started_at as last_started_ago '
+                'FROM process_statuses '
+                'ORDER BY process_name ASC'))
         ret = []
-        for row in rows:
+        for row in rows.mappings():
             ret.append(ProcessStatus(
                 process_name=row['process_name'],
                 last_started_at=row['last_started_at'],
@@ -75,10 +76,13 @@ class ProcessStatusDatabase(LifecycleListener):
             ', last_started_at = CURRENT_TIMESTAMP()' \
             ', last_heartbeat_at = CURRENT_TIMESTAMP()' \
             ', git_sha = :git_sha'
-        self.db.query(s, process_name=self._process_name, git_sha=self._sha)
+        with self.db.begin() as conn:
+            conn.execute(sqlalchemy.text(s),
+                         dict(process_name=self._process_name, git_sha=self._sha))
 
     def on_heartbeat(self):
         s = 'UPDATE process_statuses SET ' \
             '  last_heartbeat_at = CURRENT_TIMESTAMP()' \
             'WHERE process_name = :process_name'
-        self.db.query(s, process_name=self._process_name)
+        with self.db.begin() as conn:
+            conn.execute(sqlalchemy.text(s), dict(process_name=self._process_name))

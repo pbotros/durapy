@@ -19,38 +19,31 @@
     <div class="row">
         <nav class="col-md-1 d-none d-md-block bg-light sidebar">
             <div class="sidebar-sticky">
+            {% for section_name, d in {
+                'Commands': (
+                    ('/commands/history', 'Commands History'),
+                    ('/commands/send', 'Send Commands'),
+                ),
+                'Monitoring': (
+                    ('/logging', 'Monitoring'),
+                    ('/statuses', 'Statuses'),
+                ),
+            }.items() %}
                 <ul class="nav flex-column">
                     <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                        <span>Commands</span>
+                        <span>{{ section_name }}</span>
                         <a class="d-flex align-items-center text-muted" href="#">
                         </a>
                     </h6>
                     <li class="nav-item">
-                        <a class="nav-link {% if active == 'commands_history' %} active {% end %}" href="/commands/history">
-                            Commands History
+                    {% for nav_href, nav_name in d %}
+                        <a class="nav-link {% if request.path == nav_href %} active {% end %}" href="{{ nav_href }}">
+                            {{ nav_name }}
                         </a>
-                        <a class="nav-link {% if active == 'commands_send' %} active {% end %}" href="/commands/send">
-                            Send Commands
-                        </a>
+                    {% end %}
                     </li>
                 </ul>
-                <ul class="nav flex-column">
-                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                        <span>Monitoring</span>
-                        <a class="d-flex align-items-center text-muted" href="#">
-                        </a>
-                    </h6>
-                    <li class="nav-item">
-                        <a class="nav-link {% if active == 'logging' %} active {% end %}" href="/logging">
-                            Logging
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if active == 'statuses' %} active {% end %}" href="/statuses">
-                            Statuses
-                        </a>
-                    </li>
-                </ul>
+                {% end %}
             </div>
         </nav>
     </div>

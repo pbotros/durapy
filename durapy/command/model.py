@@ -1,8 +1,9 @@
 import abc
 import dataclasses
 from enum import Enum
-from typing import TypeVar, List, Callable, Optional
+from typing import TypeVar, List, Callable, Optional, ClassVar, Type
 
+import dataclasses_json
 from dataclasses_json import DataClassJsonMixin
 
 

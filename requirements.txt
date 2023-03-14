@@ -1,2 +1,9 @@
 fluent-logger
-records
+pymysql
+sqlalchemy
+dataclasses_json
+redis
+tornado
+cryptography
+pendulum
+more_itertools

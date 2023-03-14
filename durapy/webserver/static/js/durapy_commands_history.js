@@ -71,8 +71,8 @@ function initialize_commands_history(id) {
     let contents = `
         <nav aria-label="Page navigation example">
             <ul class="pagination float-right">
-                <li class="page-item"><a class="page-link" href="#" onclick="last_commands_previous()">Previous</a></li>
-                <li class="page-item"><a class="page-link" href="#" onclick="last_commands_next()">Next</a></li>
+                <li class="page-item"><a class="page-link" href="#" id="last-commands-previous-btn">Previous</a></li>
+                <li class="page-item"><a class="page-link" href="#" id="last-commands-next-btn">Next</a></li>
             </ul>
         </nav>
         <div class="table-responsive">
@@ -93,5 +93,7 @@ function initialize_commands_history(id) {
     `;
 
     $(`#${id}`).html(contents);
+    $('#last-commands-previous-btn').on('click', last_commands_previous);
+    $('#last-commands-next-btn').on('click', last_commands_next);
     load_last_commands();
 }

@@ -12,23 +12,21 @@ from durapy.webserver.webserver import DurapyWebserver
 
 class CommandsHistoryHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render('commands_history.html', active='commands_history',
-                    title='Commands History')
+        self.render('commands_history.html', title='Commands History')
 
 
 class CommandsSendHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render('commands_send.html', active='commands_send',
-                    title='Send Commands')
+        self.render('commands_send.html', title='Send Commands')
 
 
 class LoggingHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render('logging.html', active='logging', title='Logging')
+        self.render('logging.html', title='Logging')
 
 class StatusesHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render('statuses.html', active='statuses', title='Statuses')
+        self.render('statuses.html', title='Statuses')
 
 
 def main_webserver():

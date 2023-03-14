@@ -56,7 +56,7 @@ function send_command(command_type, redirect_on_success) {
     return false;
 }
 
-function initialize_commands_send(id, key, redirect_on_success) {
+function initialize_commands_send(id, key, redirect_on_success, callback) {
     let command_types_get = $.get({
         url: '/api/command-types',
         contentType: 'applicaton/json',
@@ -70,6 +70,9 @@ function initialize_commands_send(id, key, redirect_on_success) {
             }))
             .done(function (data_command_types, data_command) {
                 handle_command_types(id, data_command_types[0].command_types, data_command[0].command, redirect_on_success);
+                if (callback) {
+                    callback();
+                }
             })
             .fail(function () {
                 console.log('Fail??');
@@ -78,6 +81,9 @@ function initialize_commands_send(id, key, redirect_on_success) {
         command_types_get
             .done(function (data) {
                 handle_command_types(id, data.command_types, null, redirect_on_success);
+                if (callback) {
+                    callback();
+                }
             })
             .fail(function () {
                 console.log('Fail??');
