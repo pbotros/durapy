@@ -68,9 +68,8 @@ class _RedisCommandDatabase(CommandDatabase):
         return ret
 
     def fetch_last(self, num: int, offset: int = 0, cursor=None) -> List[PersistedCommand]:
-        max_key = _decrement_key(cursor) if cursor is not None else self.last_seen
+        max_key = _decrement_key(cursor) if cursor is not None else '+'
         results = self._redis.xrevrange(self._command_stream_name, max=max_key, count=num + offset)
-
         return [self._from_redis(key, entry) for key, entry in results[offset:]]
 
     def fetch_from(self, num: int, offset: int = 0, cursor=None) -> List[PersistedCommand]:

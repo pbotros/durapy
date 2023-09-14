@@ -477,16 +477,18 @@ class DurapyWebserver:
             command_registry=self._registry,
             override_signal_handlers=False)
 
-        app.listen(self._webserver_port)
+        http_server = app.listen(self._webserver_port)
+
         orig_sigint = signal.getsignal(signal.SIGINT)
         orig_sigterm = signal.getsignal(signal.SIGTERM)
 
         def handler(orig, signum=None, frame=None):
+            http_server.stop()
             runner.stop()
             loop = tornado.ioloop.IOLoop.current()
             if loop is not None:
                 loop.stop()
-            if callable(orig):
+            if orig is not None and callable(orig):
                 orig(signum, frame)
 
         signal.signal(signal.SIGINT, functools.partial(handler, orig_sigint))

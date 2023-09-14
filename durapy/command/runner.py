@@ -51,6 +51,7 @@ class ProcessRunner:
                 is_controller_method=False,
                 returns_instance=False,
                 deletes_instance=False,
+                is_stop_static_method=False,
             )
 
         self._command_listener = _CommandListener(

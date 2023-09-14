@@ -56,8 +56,27 @@ class CommandRegistry:
             is_controller_method=False,
             returns_instance=False,
             deletes_instance=False,
+            is_stop_static_method=False,
         )
         return self
+
+    def register_static_stop(
+            self,
+            method: Callable[[_CommandT, Context], Any]):
+        # Use default args to capture the arg
+        def _method(_: Optional[_ControllerT], command: _CommandT, context: Context, h=method):
+            return h(context)
+
+        self._registered_handlers[None] = _RegisteredHandler(
+            command_class=None,
+            method=_method,
+            is_controller_method=False,
+            returns_instance=False,
+            deletes_instance=False,
+            is_stop_static_method=True,
+        )
+        return self
+
 
     def register_controller_creator(
             self,
@@ -76,6 +95,7 @@ class CommandRegistry:
             is_controller_method=False,
             returns_instance=True,
             deletes_instance=False,
+            is_stop_static_method=False,
         )
         return self
 
@@ -96,6 +116,7 @@ class CommandRegistry:
             is_controller_method=True,
             returns_instance=False,
             deletes_instance=False,
+            is_stop_static_method=False,
         )
         return self
 
@@ -116,6 +137,7 @@ class CommandRegistry:
             is_controller_method=True,
             returns_instance=False,
             deletes_instance=True,
+            is_stop_static_method=False,
         )
         return self
 
@@ -125,11 +147,12 @@ class CommandRegistry:
 
 @dataclasses.dataclass
 class _RegisteredHandler(Generic[_ControllerT, _CommandT]):
-    command_class: Type[_CommandT]
+    command_class: Optional[Type[_CommandT]]
     method: Callable[[Optional[_ControllerT], _CommandT, Context], Any]
     is_controller_method: bool
     returns_instance: bool
     deletes_instance: bool
+    is_stop_static_method: bool
 
 
 class _CommandListener:
@@ -143,7 +166,8 @@ class _CommandListener:
 
     def handle_command(self, command: _CommandT, context: Context):
         tup: Optional[_RegisteredHandler] = \
-            only([handler for handler_clazz, handler in self._registered_handlers.items() if handler_clazz.type() == command.type()])
+            only([handler for handler_clazz, handler in self._registered_handlers.items()
+                  if handler_clazz is not None and handler_clazz.type() == command.type()])
         if tup is None:
             logging.info(f'Command type {command.type()} not mapping, ignoring. Command={command}.')
             return
@@ -176,5 +200,8 @@ class _CommandListener:
     def handle_stop(self, context: Context):
         if self._instance is not None:
             self._instance.stop(context)
-
-
+        tup: Optional[_RegisteredHandler] = self._registered_handlers.get(None, None)
+        if tup is not None:
+            if not tup.is_stop_static_method:
+                raise ValueError('Expected None command class to map to a is_stop_static_method method')
+            tup.method(None, None, context)

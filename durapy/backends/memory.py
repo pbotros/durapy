@@ -39,8 +39,16 @@ class InMemoryCommandDatabase(CommandDatabase):
         return self._commands[offset:offset + num]
 
     def fetch_next(self, timeout_ms: int) -> Optional[PersistedCommand]:
-        if self._commands_cur_idx >= len(self._commands):
-            time.sleep(timeout_ms/1000)
+        time_until = time.time() + timeout_ms / 1000
+        found_any = False
+        while time.time() < time_until:
+            if self._commands_cur_idx >= len(self._commands):
+                time.sleep(0.05)
+            else:
+                found_any = True
+                break
+
+        if not found_any:
             return None
         ret = self._commands[self._commands_cur_idx]
         self._commands_cur_idx += 1
