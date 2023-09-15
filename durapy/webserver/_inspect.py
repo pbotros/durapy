@@ -100,13 +100,20 @@ def extract_flattened_field_descriptions_class(
         clazz: typing.Type[CommandT], existing_instance: typing.Optional[CommandT]) -> typing.List[FieldDescription]:
     properties = []
     for field in dataclasses.fields(clazz):
-        if dataclasses.is_dataclass(field.type):
+        field_type = _extract_from_optional(field.type)
+        # It was an Optional if the field type had to change
+        is_optional = field_type != field.type
+        if dataclasses.is_dataclass(field_type):
             existing_nested = getattr(existing_instance, field.name) if existing_instance is not None else None
-            nested_properties = extract_flattened_field_descriptions_class(field.type, existing_nested)
+            nested_properties = extract_flattened_field_descriptions_class(field_type, existing_nested)
             for nested_property in nested_properties:
                 nested_property = dataclasses.replace(nested_property, **{
                     'id': f'{field.name}.{nested_property.id}',
                 })
+                if is_optional:
+                    nested_property = dataclasses.replace(nested_property, **{
+                        'optional': True,
+                    })
                 properties.append(nested_property)
         else:
             d = {
@@ -115,9 +122,7 @@ def extract_flattened_field_descriptions_class(
                 'allowed': None,
             }
 
-            field_type = _extract_from_optional(field.type)
-            # It was an Optional if the field type had to change
-            d['optional'] = field_type != field.type
+            d['optional'] = is_optional
 
             maybe_iterable_type = _extract_from_iterable(field_type)
             d.update({
