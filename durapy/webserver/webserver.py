@@ -460,7 +460,7 @@ class DurapyWebserver:
             # For searching both durapy's static files and the implementation's
             static_handler_class=CompositeStaticFileHandler,
             static_path=os.path.join(self._webserver_dir, 'static'),
-            autoreload=True,
+            autoreload=False,
             debug=True,
         )
 
